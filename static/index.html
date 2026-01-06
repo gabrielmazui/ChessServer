@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tic Tac Toe</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- OVERLAY -->
+  <div id="overlay">
+    <div class="modal">
+      <button id="close-overlay" type="button">✕</button>
+
+      <h2>Create Match</h2>
+      <p class="subtitle">Choose how many rounds decide the winner</p>
+
+      <div class="bo-cards">
+        <div class="bo-card selected" data-bo="5">
+          <h3>Best of 5</h3>
+          <span>Quick match</span>
+        </div>
+
+        <div class="bo-card" data-bo="7">
+          <h3>Best of 7</h3>
+          <span>Balanced</span>
+        </div>
+
+        <div class="bo-card" data-bo="9">
+          <h3>Best of 9</h3>
+          <span>Competitive</span>
+        </div>
+      </div>
+
+      <button id="confirm-create" type="button">Create Match</button>
+    </div>
+  </div>
+
+
+  <div id="app">
+    <header>
+      <h1>Tic Tac Toe</h1>
+
+      <button id="play-ai" type="button">🤖 Play vs AI</button>
+      <button id="create-server" type="button">+ Create server</button>
+    </header>
+
+    <main>
+      <section>
+        <h2>🎮 Running matches</h2>
+        <div id="running-servers" class="server-list"></div>
+      </section>
+
+      <section>
+        <h2>⏳ Waiting for player</h2>
+        <div id="waiting-servers" class="server-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/js/script.js" defer></script>
+</body>
+</html>
