@@ -1,4 +1,5 @@
-from fastapi import FastAPI, StaticFiles
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from app.routes import auth, home, match, websocket
 
 app = FastAPI()

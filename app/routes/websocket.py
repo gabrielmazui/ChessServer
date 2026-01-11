@@ -1,12 +1,12 @@
 from fastapi import APIRouter,WebSocket, WebSocketDisconnect, Cookie
-from storage import *
+from app.storage import *
 import asyncio
 
 match_lock = asyncio.Lock()
 
-app = APIRouter()
+router = APIRouter(tags=["ws"])
 
-@app.websocket("/ws/match/{match_id}")
+@router.websocket("/ws/match/{match_id}")
 async def ws_match(
     websocket: WebSocket,
     match_id: str,
@@ -14,8 +14,9 @@ async def ws_match(
 ):
     await websocket.accept()
 
-    usr = users.get(session, None)
-    if usr == None:
+    ses = sessions.get(session)
+    
+    if ses == None:
         await websocket.send_json({
             "type": "error",
             "content": "user does not exist"
@@ -24,11 +25,22 @@ async def ws_match(
         return
 
     match = None
-    #isso ta errado eu acho imagina quand o primeiro entrar
+    
+    usr = ses.get("user")
+    
     async with match_lock:
         if match_id in waiting_matches:
-            match = waiting_matches.pop(match_id)
-            matches[match_id] = match
+            if match.players["white"] != usr:
+                #verificando se e o usuario que criou a match
+                match = waiting_matches.pop(match_id)
+                m = waiting_matches_http.pop(match_id)
+
+                matches[match_id] = match
+
+                m.players[1] = usr
+                matches_http[match_id] = m
+            else:
+                match = waiting_matches[match_id]
         elif match_id in matches:
             match = matches[match_id]
         
@@ -45,11 +57,11 @@ async def ws_match(
     match.connections.append(websocket)
 
     player = False # se e jogador ou spectador
-    #desnecssario tlvz
+    
     if match.players["white"] == usr:
         # valor dado quando /create-match
         player = True
-    elif match.match.players["black"] == None:
+    elif match.players["black"] == None:
         # vai ser jogador
         player = True
         match.players["black"] = usr
@@ -85,7 +97,7 @@ async def ws_match(
                     })
                     continue
 
-                turn = match.turn
+                turn = match.engine.turn
                 if match.players[turn] == usr:
                     fr = data.get("fr", None)
                     fc = data.get("fc", None)
@@ -98,13 +110,20 @@ async def ws_match(
                         })
                         continue
 
-                    if match.move((fr, fc), (tr, tc)):
+                    if match.engine.move((fr, fc), (tr, tc)):
                         # brodcast
-                        for ws in match.connections:
-                            await ws.send_json({
-                                "type": "move",
-                                "board": match.board
-                            })
+                        for ws in list(match.connections):
+                            try:
+                                await ws.send_json({
+                                    "type": "move",
+                                    "board": match.engine.board,
+                                    "turn": match.engine.turn,
+                                    "check": match.engine.is_in_check(match.engine.turn),
+                                    "checkmate": match.engine.is_checkmate(match.engine.turn)
+                                })
+                            except:
+                                match.connections.remove(ws)
+                                
                     else:
                         await websocket.send_json({
                             "type": "error",
@@ -124,31 +143,45 @@ async def ws_match(
                 })
     except WebSocketDisconnect:
         #verificar se era jogador
+        if websocket in match.connections:
+            match.connections.remove(websocket)
+
         if not player:
             match.spectators -= 1
         else:
             if match.players["dark"] == None:
                 # a partida nem comecou
                 waiting_matches.pop(match_id, None)
+                waiting_matches_http.pop(match_id, None)
                 return
             
             match.status = "finished"
             winner = "unknown" 
             if match.players["white"] == player:
-                winner = users.get(match.players["dark"], None)
+                sess = sessions.get(match.players["dark"])
+                if sess != None:
+                    winner = sess.get("user")
 
             elif match.players["dark"] == player:
-                winner = users.get(match.players["white"], None)
+                sess = sessions.get(match.players["white"])
+                if sess != None:
+                    winner = sess.get("user")
 
+            if winner == None:
+                winner = "Unknown"
             # brodcast
-            for ws in match.connections:
-                await ws.send_json({
-                    "type": "end",
-                    "winner": winner
-                })
-                ws.close()
+            for ws in list(match.connections):
+                try:
+                    await ws.send_json({
+                        "type": "end",
+                        "winner": winner
+                    })
+                    ws.close()
+                except:
+                    match.connections.remove(ws)
 
             matches.pop(match_id, None)
+            matches_http.pop(match_id, None)
             #partida acabou
             
         return

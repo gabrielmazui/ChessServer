@@ -3,61 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <title>Tic Tac Toe</title>
-  <link rel="stylesheet" href="/static/geral/css/style.css">
+  <link rel="stylesheet" href="static/home/css/style.css">
 </head>
 <body>
 
-  <!-- OVERLAY -->
+  <!-- OVERLAY DE CONFIRMAÇÃO -->
   <div id="overlay">
     <div class="modal">
       <button id="close-overlay" type="button">✕</button>
-
-      <h2>Create Match</h2>
-      <p class="subtitle">Choose how many rounds decide the winner</p>
-
-      <div class="bo-cards">
-        <div class="bo-card selected" data-bo="5">
-          <h3>Best of 5</h3>
-          <span>Quick match</span>
-        </div>
-
-        <div class="bo-card" data-bo="7">
-          <h3>Best of 7</h3>
-          <span>Balanced</span>
-        </div>
-
-        <div class="bo-card" data-bo="9">
-          <h3>Best of 9</h3>
-          <span>Competitive</span>
-        </div>
-      </div>
-
-      <button id="confirm-create" type="button">Create Match</button>
+      <h2>Confirm Match</h2>
+      <p>Do you want to create a new match?</p>
+      <button id="confirm-create" type="button">Yes, Create Match</button>
     </div>
   </div>
 
-
   <div id="app">
     <header>
-      <h1>Tic Tac Toe</h1>
+      <h1 id="logo">ChessServer</h1>
 
-      <button id="play-ai" type="button">🤖 Play vs AI</button>
+      <div id="user-area">
+        <span id="username">{{ username }}</span>
+        <button id="logout-btn">Sair</button>
+      </div>
+
       <button id="create-server" type="button">+ Create server</button>
     </header>
 
     <main>
       <section>
         <h2>🎮 Running matches</h2>
-        <div id="running-servers" class="server-list"></div>
+        <div id="running-servers" class="server-list">
+          {% if running_matches|length == 0 %}
+          <div class="empty-message">The board is empty. Be the first to play!</div>
+          {% else %}
+            {% for s in running_matches %}
+            <div class="server-card">
+              <div class="server-info">
+                <strong>{{ s.players }}</strong>
+              </div>
+              <div class="server-actions">
+                <button class="watch-btn" data-id="{{ s.id }}">Watch</button>
+              </div>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
       </section>
 
       <section>
         <h2>⏳ Waiting for player</h2>
-        <div id="waiting-servers" class="server-list"></div>
+        <div id="waiting-servers" class="server-list">
+          {% if waiting_matches|length == 0 %}
+          <div class="empty-message">The room is calm. No players at the moment.</div>
+          {% else %}
+            {% for s in waiting_matches %}
+            <div class="server-card">
+              <div class="server-info">
+                <strong>{{ s.player }} waiting for player</strong>
+              </div>
+              <div class="server-actions">
+                <button class="join-btn" data-id="{{ s.id }}">Join</button>
+              </div>
+            </div>
+            {% endfor %}
+          {% endif %}
+        </div>
       </section>
     </main>
   </div>
 
-  <script src="/static/geral/js/script.js" defer></script>
+  <script src="static/home/js/script.js" defer></script>
 </body>
 </html>

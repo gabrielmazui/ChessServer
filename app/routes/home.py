@@ -1,26 +1,42 @@
-from fastapi import APIRouter, HTMLResponse, StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Cookie, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from app.storage import *
+templates = Jinja2Templates(directory="app/templates")
 
-app = APIRouter()
+router = APIRouter(tags=["home"])
 
 #---------------
 #HTMLResponse
-@app.get("/", response_class=HTMLResponse)
-def home():
-    with open("templates/home.html", encoding="utf-8") as f:
-        return f.read()
-    
-@app.get("/match", response_class=HTMLResponse)
-def match():
-    with open("templates/match.html", encoding="utf-8") as f:
-        return f.read()
+@router.get("/")
+def home(request: Request, session: str | None = Cookie(None)):
+    ses = sessions.get(session)
+    # if ses == None:
+    #     response = RedirectResponse(
+    #         url="/login",
+    #         status_code=303
+    #     )
 
-@app.get("/login", response_class=HTMLResponse)
+    # else:
+
+    # usr = ses.get("user") 
+    response = templates.TemplateResponse(
+        "home.html",
+        {
+            "request": request,
+            "username": "teste",
+            "waiting_matches": waiting_matches,
+            "running_matches": matches
+        }
+    )
+    return response
+
+@router.get("/login", response_class=HTMLResponse)
 def match():
     with open("templates/login.html", encoding="utf-8") as f:
         return f.read()
     
-@app.get("/signup", response_class=HTMLResponse)
+@router.get("/signup", response_class=HTMLResponse)
 def match():
     with open("templates/signup.html", encoding="utf-8") as f:
         return f.read()

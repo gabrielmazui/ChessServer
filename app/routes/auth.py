@@ -4,12 +4,12 @@ from passlib.context import CryptContext
 from app.auth.session import *
 from app.storage import *
 
-app = APIRouter()
+router = APIRouter(tags=["auth"])
 pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 #-------------
 # SIGNUP
-@app.post("/signup")
+@router.post("/signup")
 def signup(
     username: str = Form(..., min_length=3),
     password: str = Form(..., min_length=6)
@@ -28,7 +28,7 @@ def signup(
     return response
 
 
-@app.post("/login")
+@router.post("/login")
 def login(
     response: Response,
     username: str = Form(...),
@@ -59,7 +59,7 @@ def login(
     
     return response
 
-@app.post("/logout")
+@router.post("/logout")
 def logout(
     response: Response,
     session: str | None = Cookie(None)

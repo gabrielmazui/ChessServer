@@ -5,19 +5,20 @@ import uuid
 from app.auth.session import *
 from app.storage import *
 from app.chess.chess_match import ChessMatch
+from app.chess.chess_match_http import ChessMatchHttp
 
-app = APIRouter()
+router = APIRouter(tags=["match"])
 
 templates = Jinja2Templates(directory="app/templates")
 
 #---------------
 # CREATE MATCHES
-@app.post("/create-math")
+@router.post("/create-math")
 async def create_match_player(session: str | None = Cookie(default = None)):
     usr = get_user_from_session(session)
     if usr == None:
         response = RedirectResponse(
-            url="/",
+            url="/login",
             status_code=303
         )
         return response
@@ -31,16 +32,17 @@ async def create_match_player(session: str | None = Cookie(default = None)):
         match_id = str(uuid.uuid4())
 
     waiting_matches[match_id] = match_wait
+    waiting_matches_http[match_id] = ChessMatchHttp(match_id, usr, None)
 
     return {"match_id" : match_id}
     
 # ----------
 # JOIN MATCH
-@app.get("/match/{game_session}", response_class=HTMLResponse)
+@router.get("/match/{game_session}", response_class=HTMLResponse)
 async def join_match(request: Request, game_session: str, session: str | None = Cookie(default = None)):
     usr = get_user_from_session(session)
     if not usr:
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse("/login", status_code=303)
 
     if game_session not in waiting_matches and game_session not in matches:
         return templates.TemplateResponse(
